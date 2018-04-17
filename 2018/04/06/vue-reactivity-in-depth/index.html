@@ -5,7 +5,7 @@
   
 
 
-<html class="theme-next muse use-motion" lang="">
+<html class="theme-next muse use-motion" lang="zh-CN">
 <head>
   <meta charset="UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -106,7 +106,7 @@
 <meta property="og:url" content="http://ostinatos.github.io/hopedrones-tech/2018/04/06/vue-reactivity-in-depth/index.html">
 <meta property="og:site_name" content="Hope Drones - Tech">
 <meta property="og:description" content="使用vue有一段时间，对于响应式（reactivity）这个特性，自然也是踩过不少坑，自然就想了解一下vue源码中是如何实现的，以求更好的理解和使用这个框架。 在google上搜到了一篇很好的文章，通俗易懂的讲清楚了vue源码中关于响应式的核心实现代码原理。文章在此： How to Build Your Own Reactivity System 基于此就顺手写了个小原型，感受一下这个实现，代码">
-<meta property="og:locale" content="default">
+<meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://ostinatos.github.io/hopedrones-tech/2018/04/06/vue-reactivity-in-depth/vue-reactivity.png">
 <meta property="og:updated_time" content="2018-04-17T13:28:42.434Z">
 <meta name="twitter:card" content="summary">
@@ -169,7 +169,7 @@
 
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage" lang="default">
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
 
   
   
@@ -199,7 +199,7 @@
   </div>
 
   <div class="site-nav-toggle">
-    <button aria-label="accessibility.nav_toggle">
+    <button aria-label="切换导航栏">
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
       <span class="btn-bar"></span>
@@ -218,7 +218,7 @@
           
   <li class="menu-item menu-item-home">
     <a href="/hopedrones-tech/" rel="section">
-      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />home</a>
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />首页</a>
 </li>
 
       
@@ -227,7 +227,7 @@
           
   <li class="menu-item menu-item-archives">
     <a href="/hopedrones-tech/archives/" rel="section">
-      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />archives</a>
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />归档</a>
 </li>
 
       
@@ -238,7 +238,7 @@
             <a href="javascript:;" class="st-search-show-outputs">
           
             
-              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />menu.search</a>
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />搜索</a>
         </li>
       
     </ul>
@@ -345,9 +345,9 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               
-                <span class="post-meta-item-text">post.posted</span>
+                <span class="post-meta-item-text">发表于</span>
               
-              <time title="post.created" itemprop="dateCreated datePublished" datetime="2018-04-06T20:38:22+08:00">2018-04-06</time>
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-04-06T20:38:22+08:00">2018-04-06</time>
             
 
             
@@ -521,10 +521,10 @@
       
         <ul class="sidebar-nav motion-element">
           <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
-            sidebar.toc
+            文章目录
           </li>
           <li class="sidebar-nav-overview" data-target="site-overview-wrap">
-            sidebar.overview
+            站点概览
           </li>
         </ul>
       
@@ -549,7 +549,7 @@
                   <a href="/hopedrones-tech/archives/">
                 
                     <span class="site-state-item-count">2</span>
-                    <span class="site-state-item-name">state.posts</span>
+                    <span class="site-state-item-name">日志</span>
                   </a>
                 </div>
               
@@ -586,7 +586,7 @@
                       
                     
                     <span class="site-state-item-count">11</span>
-                    <span class="site-state-item-name">state.tags</span>
+                    <span class="site-state-item-name">标签</span>
                   </a>
                 </div>
               
@@ -655,7 +655,7 @@
 
 
 
-  <div class="powered-by">footer.powered</div>
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
 
 
 
@@ -663,7 +663,7 @@
 
 
 
-  <div class="theme-info">footer.theme &mdash; <a class="theme-link" target="_blank" href="https://github.com/theme-next/hexo-theme-next">NexT.Muse</a> v6.1.0</div>
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/theme-next/hexo-theme-next">NexT.Muse</a> v6.1.0</div>
 
 
 
