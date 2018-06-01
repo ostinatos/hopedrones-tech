@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/hopedrones-tech/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/hopedrones-tech/css/main.css?v=6.1.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/hopedrones-tech/images/apple-touch-icon-next.png?v=6.1.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/hopedrones-tech/images/favicon-32x32-next.png?v=6.1.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/hopedrones-tech/images/favicon-16x16-next.png?v=6.1.0">
+
+
+  <link rel="mask-icon" href="/hopedrones-tech/images/logo.svg?v=6.1.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/hopedrones-tech/',
+    scheme: 'Muse',
+    version: '6.1.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="Vue中的响应式(reactivity)是个好东西，它简化了代码，实现了前端的数据驱动(data-driven)，提升了代码的可维护性。 然而，这个响应式特性也是有不少要注意的地方，特别是对于对象和数组，一不留神就容易掉进“陷阱”：为什么数据变了，界面却没有变化？ 这篇文章尝试列举一些针对对象和数组的常见响应式场景，试着分析为什么某些场景下响应式“失效”了，背后的原理是什么。 例子源码请看这里：v">
+<meta name="keywords" content="vue,reactivity,javascript,前端,响应式,object,array">
+<meta property="og:type" content="article">
+<meta property="og:title" content="vue中的Object&#x2F;Array响应式陷阱">
+<meta property="og:url" content="http://ostinatos.github.io/hopedrones-tech/2018/05/25/vue-object-reactiviy/index.html">
+<meta property="og:site_name" content="Hope Drones - Tech">
+<meta property="og:description" content="Vue中的响应式(reactivity)是个好东西，它简化了代码，实现了前端的数据驱动(data-driven)，提升了代码的可维护性。 然而，这个响应式特性也是有不少要注意的地方，特别是对于对象和数组，一不留神就容易掉进“陷阱”：为什么数据变了，界面却没有变化？ 这篇文章尝试列举一些针对对象和数组的常见响应式场景，试着分析为什么某些场景下响应式“失效”了，背后的原理是什么。 例子源码请看这里：v">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://ostinatos.github.io/hopedrones-tech/2018/05/25/vue-object-reactiviy/object-reactivity.png">
+<meta property="og:image" content="http://ostinatos.github.io/hopedrones-tech/2018/05/25/vue-object-reactiviy/object-reactivity-2.png">
+<meta property="og:image" content="http://ostinatos.github.io/hopedrones-tech/2018/05/25/vue-object-reactiviy/nested-component.png">
+<meta property="og:updated_time" content="2018-06-01T11:52:54.977Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="vue中的Object&#x2F;Array响应式陷阱">
+<meta name="twitter:description" content="Vue中的响应式(reactivity)是个好东西，它简化了代码，实现了前端的数据驱动(data-driven)，提升了代码的可维护性。 然而，这个响应式特性也是有不少要注意的地方，特别是对于对象和数组，一不留神就容易掉进“陷阱”：为什么数据变了，界面却没有变化？ 这篇文章尝试列举一些针对对象和数组的常见响应式场景，试着分析为什么某些场景下响应式“失效”了，背后的原理是什么。 例子源码请看这里：v">
+<meta name="twitter:image" content="http://ostinatos.github.io/hopedrones-tech/2018/05/25/vue-object-reactiviy/object-reactivity.png">
+
+
+
+
+
+
+  <link rel="canonical" href="http://ostinatos.github.io/hopedrones-tech/2018/05/25/vue-object-reactiviy/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>vue中的Object/Array响应式陷阱 | Hope Drones - Tech</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"> 
+
+<div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/hopedrones-tech/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Hope Drones - Tech</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+          
+  <li class="menu-item menu-item-home">
+    <a href="/hopedrones-tech/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />首页</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-archives">
+    <a href="/hopedrones-tech/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />归档</a>
+</li>
+
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+    
+
+    
+    
+      
+      
+    
+      
+      
+    
+    
+
+  
+
+
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input" />
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'stCJq1yyY8b4PW_2ez3y','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+  
+
+
+
+ </div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ostinatos.github.io/hopedrones-tech/hopedrones-tech/2018/05/25/vue-object-reactiviy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Revlekt">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://7xn9mp.com1.z0.glb.clouddn.com/avatar-sotl.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hope Drones - Tech">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">vue中的Object/Array响应式陷阱</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-05-25T22:05:58+08:00">2018-05-25</time>
+            
+
+            
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Vue中的响应式(reactivity)是个好东西，它简化了代码，实现了前端的数据驱动(data-driven)，提升了代码的可维护性。</p>
+<p>然而，这个响应式特性也是有不少<a href="https://cn.vuejs.org/v2/guide/reactivity.html" target="_blank" rel="noopener">要注意的地方</a>，特别是对于对象和数组，一不留神就容易掉进“陷阱”：为什么数据变了，界面却没有变化？</p>
+<p>这篇文章尝试列举一些针对对象和数组的常见响应式场景，试着分析为什么某些场景下响应式“失效”了，背后的原理是什么。</p>
+<h1 id="例子源码"><a href="#例子源码" class="headerlink" title="例子源码"></a>例子源码</h1><p>请看这里：<a href="https://github.com/ostinatos/vue-playground" target="_blank" rel="noopener">vue-playground</a></p>
+<p>基于vue-cli 3生成的vue demo工程。安装完依赖后 npm run serve 就可以运行。</p>
+<p>代码结构：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">└── src</span><br><span class="line">    ├── App.vue</span><br><span class="line">    ├── assets</span><br><span class="line">    │   └── logo.png</span><br><span class="line">    ├── components</span><br><span class="line">    │   └── HelloWorld.vue</span><br><span class="line">    ├── main.js</span><br><span class="line">    └── object-reactivity</span><br><span class="line">        ├── components</span><br><span class="line">        │   ├── nested-component.vue</span><br><span class="line">        │   └── nested-readonly-component.vue</span><br><span class="line">        └── object-reactivity.vue</span><br></pre></td></tr></table></figure></p>
+<p>object-reactivity.vue是入口组件。</p>
+<p>nested-component.vue是其中一个子组件，nested-readonly-component.vue是另一个子组件。</p>
+<p>两者的区别是nested-readonly-component内直接绑定props进行展示。而nested-component的界面绑定的是一个内部data。</p>
+<h1 id="场景描述"><a href="#场景描述" class="headerlink" title="场景描述"></a>场景描述</h1><p>要测试的场景并不复杂。在入口组件object-reactivity中定义了data，分别有一个类型为对象的basket，和类型为数组的list.</p>
+<p><em>object-reactivity.vue</em></p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">data()&#123;</span><br><span class="line">    <span class="keyword">return</span> &#123;</span><br><span class="line">        foods:&#123;</span><br><span class="line">            basket:&#123;</span><br><span class="line">                apple: <span class="string">"apple in a basket"</span></span><br><span class="line">            &#125;,</span><br><span class="line">            list:[</span><br><span class="line">                <span class="string">"potato"</span>,<span class="string">"tomato"</span>, <span class="string">"pizza"</span></span><br><span class="line">            ]</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>两者都作为参数（props），分别传入到nested-component以及nested-readonly-component中。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">nested-component</span> <span class="attr">:basket</span>=<span class="string">"foods.basket"</span> <span class="attr">:foods</span>=<span class="string">"foods.list"</span>&gt;</span><span class="tag">&lt;/<span class="name">nested-component</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">nested-readonly-component</span> <span class="attr">:basket</span>=<span class="string">"foods.basket"</span> <span class="attr">:foods</span>=<span class="string">"foods.list"</span>&gt;</span><span class="tag">&lt;/<span class="name">nested-readonly-component</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>然后我们尝试用不同的方式<strong>改变</strong> object-reactivity中的这两个数据，看两个组件实例是否在界面上发生相应的变化。</p>
+<p>为了便于在console中进行试验，我们将object-reactivity的foods赋给一个window下的全局变量。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mounted()&#123;</span><br><span class="line">    <span class="built_in">window</span>.foods = <span class="keyword">this</span>.foods;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行 npm run serve 将工程跑起来，然后在控制台分别尝试如下语句，你能预见界面会发生什么变化吗？</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1</span></span><br><span class="line"><span class="built_in">window</span>.foods.basket.apple = <span class="string">"new apple in the basket."</span></span><br><span class="line"><span class="comment">// 2</span></span><br><span class="line">Vue.set(foods.basket, <span class="string">"apple"</span>, <span class="string">"new apple"</span>);</span><br><span class="line"><span class="comment">// 3</span></span><br><span class="line"><span class="built_in">window</span>.foods.basket = &#123;<span class="attr">apple</span>: <span class="string">"new apple in the basket"</span>&#125;;</span><br><span class="line"><span class="comment">// 4</span></span><br><span class="line">Vue.set(foods, <span class="string">"basket"</span>, &#123;<span class="attr">apple</span>:<span class="string">"new apple"</span>&#125;);</span><br></pre></td></tr></table></figure>
+<h1 id="原理解释"><a href="#原理解释" class="headerlink" title="原理解释"></a>原理解释</h1><h2 id="初始状态"><a href="#初始状态" class="headerlink" title="初始状态"></a>初始状态</h2><img src="/hopedrones-tech/2018/05/25/vue-object-reactiviy/object-reactivity.png" title="object-reactivity">
+<p>上图展示的是初始情况下3个组件和监控的数据（foods.basket）的关系。请结合源码进行理解。</p>
+<p>可以看到三个组件都分别有界面的watcher。watcher负责的是监控数据的变化，按需更新界面（DOM）。</p>
+<p>值得注意的是，三个watcher所监控的对象并不尽相同：</p>
+<ul>
+<li>object-reactivity.vue以及nested-readonly-component的界面watcher所监控的是橙色的数据对象。</li>
+<li>nested-component的界面watcher所监控的是则是自己内部的data: innerBasket。</li>
+</ul>
+<h2 id="可以维持响应式的情况"><a href="#可以维持响应式的情况" class="headerlink" title="可以维持响应式的情况"></a>可以维持响应式的情况</h2><p>经过测试，你会发现如下两个语句执行后，界面中三处都发生了相应的变化。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1</span></span><br><span class="line"><span class="built_in">window</span>.foods.basket.apple = <span class="string">"new apple in the basket."</span></span><br><span class="line"><span class="comment">// 2</span></span><br><span class="line">Vue.set(foods.basket, <span class="string">"apple"</span>, <span class="string">"new apple"</span>);</span><br></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>界面</th>
+<th>响应式维持？</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>object-reactivity.vue</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>nested-component.vue</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>nested-readonly-component.vue</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p>原因是什么？</p>
+<p>可以结合上面的图来看，三个界面watcher实际上监控的都是中间橙色的那个对象。</p>
+<p>一旦这个对象的属性被修改，就会触发这个对象属性的<strong>reactive setter</strong> （vue给数据对象注入的，如不了解可以参看我的这篇文章: <a href="http://ostinatos.github.io/hopedrones-tech/2018/04/06/vue-reactivity-in-depth/">深入vue的响应式实现</a>），从而通知三个界面watcher对各自的界面进行修改。</p>
+<h2 id="丢失响应式的情况"><a href="#丢失响应式的情况" class="headerlink" title="丢失响应式的情况"></a>丢失响应式的情况</h2><p>然而，执行以下两个语句中的任意一个，你会发现，nested-component.vue的响应式丢失了。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 3</span></span><br><span class="line"><span class="built_in">window</span>.foods.basket = &#123;<span class="attr">apple</span>: <span class="string">"new apple in the basket"</span>&#125;;</span><br><span class="line"><span class="comment">// 4</span></span><br><span class="line">Vue.set(foods, <span class="string">"basket"</span>, &#123;<span class="attr">apple</span>:<span class="string">"new apple"</span>&#125;);</span><br></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>界面</th>
+<th>响应式维持？</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>object-reactivity.vue</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>nested-component.vue</td>
+<td>no</td>
+</tr>
+<tr>
+<td>nested-readonly-component.vue</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p> 怎么解释呢？还是通过一张图解释一下。</p>
+<img src="/hopedrones-tech/2018/05/25/vue-object-reactiviy/object-reactivity-2.png" title="object-reactivity">
+<p>从示意图上可以看到，当执行以上语句后：</p>
+<p><strong>object-reactivity.vue</strong></p>
+<p>object-reactivity.vue的界面watcher以及data的指向都发生了变化，指向了一个新的对象；</p>
+<p><strong>nested-readonly-component.vue</strong></p>
+<p>nested-readonly-component.vue的界面watcher指向的还是自己的basket属性，然而basket属性指向的是那个新的对象；<br>这里值得留意的一点是，object-reactivity.vue中的foods.basket发生了变化，因此<strong>触发了对nested-readonly-component.vue的属性的重新赋值</strong>。而由于nested-readonly-component的界面渲染（也就是render函数）是依赖于basket属性，因此basket属性的变化又触发了render()函数的重新执行，从而界面就得到了更新。</p>
+<p><strong>nested-component.vue</strong></p>
+<p>nested-component.vue的basket属性也发生了变化（就像nested-readonly-component的情况），也指向了新的对象，然而<strong>innerBasket指向的还是原来的对象，而其界面watcher指向的又是innerBasket</strong>。这也就可以解释为什么nested-component的响应式丢失了，因为其界面watcher所监控的还是旧的那个对象。</p>
+<img src="/hopedrones-tech/2018/05/25/vue-object-reactiviy/nested-component.png" title="nested-component">
+<h1 id="lesson-learned"><a href="#lesson-learned" class="headerlink" title="lesson learned"></a>lesson learned</h1><h2 id="属性对应的数据发生变化，vue会给属性重新赋值"><a href="#属性对应的数据发生变化，vue会给属性重新赋值" class="headerlink" title="属性对应的数据发生变化，vue会给属性重新赋值"></a>属性对应的数据发生变化，vue会给属性重新赋值</h2><p>其实本质就是<strong>监控数据变化 + 执行render函数</strong></p>
+<p>object-reactivity.vue的数据（foods）发生变化，触发object-reactivity.vue的render函数重新执行，自然也就把新的数据作为props赋值给了子组件。</p>
+<h2 id="理解界面watcher的指向"><a href="#理解界面watcher的指向" class="headerlink" title="理解界面watcher的指向"></a>理解界面watcher的指向</h2><p>响应式的核心是通过给数据注入getter/setter从而让界面作为观察者（watcher）监控到数据的变化，自动更新界面。响应式“丢失”的情况，往往就是界面watcher的指向与预期的数据对象不匹配造成。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/hopedrones-tech/tags/vue/" rel="tag"># vue</a>
+          
+            <a href="/hopedrones-tech/tags/reactivity/" rel="tag"># reactivity</a>
+          
+            <a href="/hopedrones-tech/tags/javascript/" rel="tag"># javascript</a>
+          
+            <a href="/hopedrones-tech/tags/前端/" rel="tag"># 前端</a>
+          
+            <a href="/hopedrones-tech/tags/响应式/" rel="tag"># 响应式</a>
+          
+            <a href="/hopedrones-tech/tags/object/" rel="tag"># object</a>
+          
+            <a href="/hopedrones-tech/tags/array/" rel="tag"># array</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/hopedrones-tech/2018/04/06/vue-reactivity-in-depth/" rel="next" title="深入vue的响应式实现">
+                <i class="fa fa-chevron-left"></i> 深入vue的响应式实现
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="http://7xn9mp.com1.z0.glb.clouddn.com/avatar-sotl.jpg"
+                alt="Revlekt" />
+            
+              <p class="site-author-name" itemprop="name">Revlekt</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/hopedrones-tech/archives/">
+                
+                    <span class="site-state-item-count">3</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/hopedrones-tech/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">14</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#例子源码"><span class="nav-number">1.</span> <span class="nav-text">例子源码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#场景描述"><span class="nav-number">2.</span> <span class="nav-text">场景描述</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#原理解释"><span class="nav-number">3.</span> <span class="nav-text">原理解释</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#初始状态"><span class="nav-number">3.1.</span> <span class="nav-text">初始状态</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#可以维持响应式的情况"><span class="nav-number">3.2.</span> <span class="nav-text">可以维持响应式的情况</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#丢失响应式的情况"><span class="nav-number">3.3.</span> <span class="nav-text">丢失响应式的情况</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#lesson-learned"><span class="nav-number">4.</span> <span class="nav-text">lesson learned</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#属性对应的数据发生变化，vue会给属性重新赋值"><span class="nav-number">4.1.</span> <span class="nav-text">属性对应的数据发生变化，vue会给属性重新赋值</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#理解界面watcher的指向"><span class="nav-number">4.2.</span> <span class="nav-text">理解界面watcher的指向</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love" id="animate"> 
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Revlekt</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/theme-next/hexo-theme-next">NexT.Muse</a> v6.1.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/hopedrones-tech/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/hopedrones-tech/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/hopedrones-tech/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/hopedrones-tech/js/src/utils.js?v=6.1.0"></script>
+
+  <script type="text/javascript" src="/hopedrones-tech/js/src/motion.js?v=6.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/hopedrones-tech/js/src/scrollspy.js?v=6.1.0"></script>
+<script type="text/javascript" src="/hopedrones-tech/js/src/post-details.js?v=6.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/hopedrones-tech/js/src/bootstrap.js?v=6.1.0"></script>
+
+
+
+  
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
