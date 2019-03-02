@@ -312,6 +312,141 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ostinatos.github.io/hopedrones-tech/hopedrones-tech/2019/03/02/vue-object-property-reactiviy/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Revlekt">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://7xn9mp.com1.z0.glb.clouddn.com/avatar-sotl.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hope Drones - Tech">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/hopedrones-tech/2019/03/02/vue-object-property-reactiviy/" itemprop="url">vue中对象作为属性的响应式行为</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-03-02T12:02:20+08:00">2019-03-02</time>
+            
+
+            
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h1 id="场景："><a href="#场景：" class="headerlink" title="场景："></a>场景：</h1><ol>
+<li>更改对象属性的引用</li>
+<li>更改对象属性内的属性</li>
+</ol>
+<h1 id="需要考虑的因素"><a href="#需要考虑的因素" class="headerlink" title="需要考虑的因素"></a>需要考虑的因素</h1><p>对象中的属性是否在传递props前存在</p>
+<h1 id="考察："><a href="#考察：" class="headerlink" title="考察："></a>考察：</h1><ul>
+<li>watcher的行为</li>
+<li>computed 属性的行为</li>
+</ul>
+<h1 id="演示代码"><a href="#演示代码" class="headerlink" title="演示代码"></a>演示代码</h1><p>请看这里：<a href="https://github.com/ostinatos/vue-playground" target="_blank" rel="noopener">vue-playground</a></p>
+<p>找到main.js，将以下这句取消注释，将其它App的import 注释掉</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> App <span class="keyword">from</span> <span class="string">'./object-property/main.vue'</span></span><br></pre></td></tr></table></figure>
+<h1 id="结论总结"><a href="#结论总结" class="headerlink" title="结论总结"></a>结论总结</h1><img src="/hopedrones-tech/2019/03/02/vue-object-property-reactiviy/object-prop-reactivity.png" title="object-prop-reactivity">
+          
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://ostinatos.github.io/hopedrones-tech/hopedrones-tech/2018/05/25/vue-object-reactiviy/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -909,7 +1044,7 @@
                 
                   <a href="/hopedrones-tech/archives/">
                 
-                    <span class="site-state-item-count">3</span>
+                    <span class="site-state-item-count">4</span>
                     <span class="site-state-item-name">日志</span>
                   </a>
                 </div>
@@ -992,7 +1127,7 @@
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
   <span class="with-love" id="animate"> 
     <i class="fa fa-user"></i>
   </span>
