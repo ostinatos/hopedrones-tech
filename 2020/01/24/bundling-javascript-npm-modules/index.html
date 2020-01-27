@@ -109,7 +109,7 @@
 <meta property="og:image" content="http://ostinatos.github.io/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/error-loading-chunk.png">
 <meta property="og:image" content="http://ostinatos.github.io/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/loading-chunk.png">
 <meta property="og:image" content="http://ostinatos.github.io/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/bundle.png">
-<meta property="og:updated_time" content="2020-01-27T04:27:08.322Z">
+<meta property="og:updated_time" content="2020-01-27T09:19:19.502Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="打包发布js库时对于异步依赖的处理">
 <meta name="twitter:description" content="背景本人在公司内主要负责一些前端公共组件的设计开发和维护，免不了涉及将javascript代码打包为模块，并将其发布到npm registry的工作。 在这当中，其实会遇到不少的细节问题，值得总结分享一下，其中一个最近碰到的比较共性的问题，就是对于js库的异步依赖如何处理的问题。 场景是这样的： 假设你负责维护的，是一个叫 foo 的公共组件。 随着时间推移，你维护的这个公共组件foo功能越来越丰">
@@ -418,7 +418,8 @@
 <li>所希望加载的分割文件，在宿主应用中并没有</li>
 </ul>
 <p>要解决这个问题，可以通过在宿主应用中，使用类似<code>copy-webpack-plugin</code>这种插件，将node_modules下的依赖文件拷贝到运行目录中解决。但是这样的方案并不优雅：使用个第三方依赖，还要在编译构建的脚本中增加配置，也太麻烦啰。</p>
-<h2 id="rollup"><a href="#rollup" class="headerlink" title="rollup"></a>rollup</h2><p>rollup 和 webpack的最大不同之处在于，rollup支持打包为es module（esm）格式的js。</p>
+<h2 id="rollup"><a href="#rollup" class="headerlink" title="rollup"></a>rollup</h2><p>rollup 和 webpack的最大不同之处在于，rollup更适合于用来打包js库[2]。</p>
+<p>rollup可以支持将js库打包为es module（esm）格式的js。</p>
 <p>下面我们来试试使用rollup来打包我们的js库。</p>
 <p>rollup配置文件大概长这个样子：</p>
 <figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//rollup.config.js</span></span><br><span class="line"><span class="built_in">module</span>.exports = &#123;</span><br><span class="line">    input: <span class="string">'src/index.js'</span>,</span><br><span class="line">    output: &#123;</span><br><span class="line">        <span class="comment">// 设置输出格式为esm</span></span><br><span class="line">        format: <span class="string">'esm'</span>,</span><br><span class="line">        dir: <span class="string">"dist-esm"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
@@ -445,18 +446,26 @@
 <figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span>(<span class="string">'./xxx.js'</span>).then()</span><br></pre></td></tr></table></figure>
 <ul>
 <li><p>不能使用webpack打包js库</p>
-<p>  因为webpack不支持输出es module标准的js</p>
+<p>  因为使用webpack打包js库时，<strong>对于需要懒加载的资源，webpack是直接生成了动态拼接script标签的代码</strong>，而对于library来说，这样的代码对于宿主应用的使用是很麻烦的</p>
 </li>
-<li><p>使用rollup打包为esm标准的模块</p>
+<li><p>使用rollup打包js库（js library）</p>
+<p>  使用rollup打包js library的好处是，对于library中需要懒加载的资源，rollup编译为了异步加载chunk的代码，而且用的不是动态拼接script标签的方式，这样有助于宿主应用使用js library时进行分割。</p>
 </li>
 <li><p>设置正确的模块入口</p>
 <p>  package.json 设置入口为es module 标准的js。可以通过指定main或者module字段都可以</p>
+</li>
+<li><p>宿主应用可以正常使用webpack来编译使用js库的代码</p>
+<p>  从实践结果来看，宿主应用使用webpack编译，能够正确的解析出js库中的异步加载依赖，并将其作为宿主应用的分割文件进行异步懒加载，有效提升加载性能</p>
 </li>
 </ul>
 <h1 id="完整参考代码"><a href="#完整参考代码" class="headerlink" title="完整参考代码"></a>完整参考代码</h1><p>模块代码参考：</p>
 <p><a href="https://github.com/ostinatos/js-playground/tree/master/packages/async-dep-module-demo" target="_blank" rel="noopener">https://github.com/ostinatos/js-playground/tree/master/packages/async-dep-module-demo</a></p>
 <p>宿主应用参考：</p>
 <p><a href="https://github.com/ostinatos/js-playground/tree/master/packages/module-host-demo" target="_blank" rel="noopener">https://github.com/ostinatos/js-playground/tree/master/packages/module-host-demo</a></p>
+<h1 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h1><p>[1] <a href="https://levelup.gitconnected.com/code-splitting-for-libraries-bundling-for-npm-with-rollup-1-0-2522c7437697" target="_blank" rel="noopener">Code-splitting for libraries—bundling for npm with Rollup 1.0</a></p>
+<p>讲解如何使用rollup打包出能按需使用的npm模块</p>
+<p>[2] <a href="https://medium.com/webpack/webpack-and-rollup-the-same-but-different-a41ad427058c" target="_blank" rel="noopener">Webpack and Rollup: the same but different</a></p>
+<p>比较了webpack和rollup的不同，以及何时该使用哪一个</p>
 
       
     </div>
@@ -649,7 +658,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#场景和期望"><span class="nav-number">2.</span> <span class="nav-text">场景和期望</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实现"><span class="nav-number">3.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用webpack打包你的组件库？"><span class="nav-number">3.1.</span> <span class="nav-text">使用webpack打包你的组件库？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rollup"><span class="nav-number">3.2.</span> <span class="nav-text">rollup</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#改变组件的入口"><span class="nav-number">3.2.1.</span> <span class="nav-text">改变组件的入口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#运行效果"><span class="nav-number">3.2.2.</span> <span class="nav-text">运行效果</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#完整参考代码"><span class="nav-number">5.</span> <span class="nav-text">完整参考代码</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#场景和期望"><span class="nav-number">2.</span> <span class="nav-text">场景和期望</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实现"><span class="nav-number">3.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用webpack打包你的组件库？"><span class="nav-number">3.1.</span> <span class="nav-text">使用webpack打包你的组件库？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rollup"><span class="nav-number">3.2.</span> <span class="nav-text">rollup</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#改变组件的入口"><span class="nav-number">3.2.1.</span> <span class="nav-text">改变组件的入口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#运行效果"><span class="nav-number">3.2.2.</span> <span class="nav-text">运行效果</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#完整参考代码"><span class="nav-number">5.</span> <span class="nav-text">完整参考代码</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参考资料"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
             
 
           </div>
