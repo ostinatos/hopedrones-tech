@@ -109,7 +109,7 @@
 <meta property="og:image" content="http://ostinatos.github.io/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/error-loading-chunk.png">
 <meta property="og:image" content="http://ostinatos.github.io/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/loading-chunk.png">
 <meta property="og:image" content="http://ostinatos.github.io/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/bundle.png">
-<meta property="og:updated_time" content="2020-01-27T04:11:45.805Z">
+<meta property="og:updated_time" content="2020-01-27T04:27:08.322Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="打包发布js库时对于异步依赖的处理">
 <meta name="twitter:description" content="背景本人在公司内主要负责一些前端公共组件的设计开发和维护，免不了涉及将javascript代码打包为模块，并将其发布到npm registry的工作。 在这当中，其实会遇到不少的细节问题，值得总结分享一下，其中一个最近碰到的比较共性的问题，就是对于js库的异步依赖如何处理的问题。 场景是这样的： 假设你负责维护的，是一个叫 foo 的公共组件。 随着时间推移，你维护的这个公共组件foo功能越来越丰">
@@ -453,6 +453,10 @@
 <p>  package.json 设置入口为es module 标准的js。可以通过指定main或者module字段都可以</p>
 </li>
 </ul>
+<h1 id="完整参考代码"><a href="#完整参考代码" class="headerlink" title="完整参考代码"></a>完整参考代码</h1><p>模块代码参考：</p>
+<p><a href="https://github.com/ostinatos/js-playground/tree/master/packages/async-dep-module-demo" target="_blank" rel="noopener">https://github.com/ostinatos/js-playground/tree/master/packages/async-dep-module-demo</a></p>
+<p>宿主应用参考：</p>
+<p><a href="https://github.com/ostinatos/js-playground/tree/master/packages/module-host-demo" target="_blank" rel="noopener">https://github.com/ostinatos/js-playground/tree/master/packages/module-host-demo</a></p>
 
       
     </div>
@@ -645,7 +649,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#场景和期望"><span class="nav-number">2.</span> <span class="nav-text">场景和期望</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实现"><span class="nav-number">3.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用webpack打包你的组件库？"><span class="nav-number">3.1.</span> <span class="nav-text">使用webpack打包你的组件库？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rollup"><span class="nav-number">3.2.</span> <span class="nav-text">rollup</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#改变组件的入口"><span class="nav-number">3.2.1.</span> <span class="nav-text">改变组件的入口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#运行效果"><span class="nav-number">3.2.2.</span> <span class="nav-text">运行效果</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#场景和期望"><span class="nav-number">2.</span> <span class="nav-text">场景和期望</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实现"><span class="nav-number">3.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用webpack打包你的组件库？"><span class="nav-number">3.1.</span> <span class="nav-text">使用webpack打包你的组件库？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rollup"><span class="nav-number">3.2.</span> <span class="nav-text">rollup</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#改变组件的入口"><span class="nav-number">3.2.1.</span> <span class="nav-text">改变组件的入口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#运行效果"><span class="nav-number">3.2.2.</span> <span class="nav-text">运行效果</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#完整参考代码"><span class="nav-number">5.</span> <span class="nav-text">完整参考代码</span></a></li></ol></div>
             
 
           </div>
