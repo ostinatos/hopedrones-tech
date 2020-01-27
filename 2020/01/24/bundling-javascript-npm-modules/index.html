@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link href="/hopedrones-tech/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/hopedrones-tech/css/main.css?v=6.1.0" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/hopedrones-tech/images/apple-touch-icon-next.png?v=6.1.0">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/hopedrones-tech/images/favicon-32x32-next.png?v=6.1.0">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/hopedrones-tech/images/favicon-16x16-next.png?v=6.1.0">
+
+
+  <link rel="mask-icon" href="/hopedrones-tech/images/logo.svg?v=6.1.0" color="#222">
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/hopedrones-tech/',
+    scheme: 'Muse',
+    version: '6.1.0',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="背景本人在公司内主要负责一些前端公共组件的设计开发和维护，免不了涉及将javascript代码打包为模块，并将其发布到npm registry的工作。 在这当中，其实会遇到不少的细节问题，值得总结分享一下，其中一个最近碰到的比较共性的问题，就是对于js库的异步依赖如何处理的问题。 场景是这样的： 假设你负责维护的，是一个叫 foo 的公共组件。 随着时间推移，你维护的这个公共组件foo功能越来越丰">
+<meta property="og:type" content="article">
+<meta property="og:title" content="打包发布js库时对于异步依赖的处理">
+<meta property="og:url" content="http://ostinatos.github.io/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/index.html">
+<meta property="og:site_name" content="Hope Drones - Tech">
+<meta property="og:description" content="背景本人在公司内主要负责一些前端公共组件的设计开发和维护，免不了涉及将javascript代码打包为模块，并将其发布到npm registry的工作。 在这当中，其实会遇到不少的细节问题，值得总结分享一下，其中一个最近碰到的比较共性的问题，就是对于js库的异步依赖如何处理的问题。 场景是这样的： 假设你负责维护的，是一个叫 foo 的公共组件。 随着时间推移，你维护的这个公共组件foo功能越来越丰">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://ostinatos.github.io/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/error-loading-chunk.png">
+<meta property="og:image" content="http://ostinatos.github.io/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/loading-chunk.png">
+<meta property="og:image" content="http://ostinatos.github.io/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/bundle.png">
+<meta property="og:updated_time" content="2020-01-27T04:11:45.805Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="打包发布js库时对于异步依赖的处理">
+<meta name="twitter:description" content="背景本人在公司内主要负责一些前端公共组件的设计开发和维护，免不了涉及将javascript代码打包为模块，并将其发布到npm registry的工作。 在这当中，其实会遇到不少的细节问题，值得总结分享一下，其中一个最近碰到的比较共性的问题，就是对于js库的异步依赖如何处理的问题。 场景是这样的： 假设你负责维护的，是一个叫 foo 的公共组件。 随着时间推移，你维护的这个公共组件foo功能越来越丰">
+<meta name="twitter:image" content="http://ostinatos.github.io/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/error-loading-chunk.png">
+
+
+
+
+
+
+  <link rel="canonical" href="http://ostinatos.github.io/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/"/>
+
+
+
+<script type="text/javascript" id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>打包发布js库时对于异步依赖的处理 | Hope Drones - Tech</title>
+  
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style type="text/css">
+    .use-motion .motion-element,
+    .use-motion .brand,
+    .use-motion .menu-item,
+    .sidebar-inner,
+    .use-motion .post-block,
+    .use-motion .pagination,
+    .use-motion .comments,
+    .use-motion .post-header,
+    .use-motion .post-body,
+    .use-motion .collection-title { opacity: initial; }
+
+    .use-motion .logo,
+    .use-motion .site-title,
+    .use-motion .site-subtitle {
+      opacity: initial;
+      top: initial;
+    }
+
+    .use-motion {
+      .logo-line-before i { left: initial; }
+      .logo-line-after i { right: initial; }
+    }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"> 
+
+<div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/hopedrones-tech/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Hope Drones - Tech</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+          
+  <li class="menu-item menu-item-home">
+    <a href="/hopedrones-tech/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-home"></i> <br />首页</a>
+</li>
+
+      
+        
+        
+          
+  <li class="menu-item menu-item-archives">
+    <a href="/hopedrones-tech/archives/" rel="section">
+      <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />归档</a>
+</li>
+
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="st-search-show-outputs">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br />搜索</a>
+        </li>
+      
+    </ul>
+  
+
+  
+    
+
+    
+    
+      
+      
+    
+      
+      
+    
+    
+
+  
+
+
+  
+
+  
+    <div class="site-search">
+      
+  <form class="site-search-form">
+  <input type="text" id="st-search-input" class="st-search-input st-default-search-input" />
+</form>
+
+<script type="text/javascript">
+  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
+    (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
+    e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
+  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
+
+  _st('install', 'stCJq1yyY8b4PW_2ez3y','2.0.0');
+</script>
+
+
+
+    </div>
+  
+</nav>
+
+
+  
+
+
+
+ </div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://ostinatos.github.io/hopedrones-tech/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Revlekt">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="http://7xn9mp.com1.z0.glb.clouddn.com/avatar-sotl.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hope Drones - Tech">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">打包发布js库时对于异步依赖的处理</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2020-01-24T18:26:54+08:00">2020-01-24</time>
+            
+
+            
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h1><p>本人在公司内主要负责一些前端公共组件的设计开发和维护，免不了涉及将javascript代码打包为模块，并将其发布到npm registry的工作。</p>
+<p>在这当中，其实会遇到不少的细节问题，值得总结分享一下，其中一个最近碰到的比较共性的问题，就是<strong>对于js库的异步依赖如何处理的问题</strong>。</p>
+<p>场景是这样的：</p>
+<p>假设你负责维护的，是一个叫 <code>foo</code> 的公共组件。</p>
+<p>随着时间推移，你维护的这个公共组件foo功能越来越丰富，能够满足越来越多的业务场景，越来越多的应用依赖了你维护的这个组件。</p>
+<p>但慢慢的，使用你的组件的开发团队对你的组件提出了这些意见：</p>
+<blockquote>
+<p>我们的应用中90%的用户并没有用到你组件的a功能，能否默认不加载？否则对我们应用的初始性能会造成影响。</p>
+</blockquote>
+<p>这种情况，对于维护组件的你应该如何实现呢？下面我们来一起看看。</p>
+<h1 id="场景和期望"><a href="#场景和期望" class="headerlink" title="场景和期望"></a>场景和期望</h1><p>假设你维护的组件叫 <code>async-dep-module-demo</code> ，当中提供了一个复杂的计算功能，叫 <code>asyncAdd</code> </p>
+<p>为了完成此功能，需要引入一个体积比较大的代码。为了性能，我们使用es6的异步import语法。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 引入一些同步依赖</span></span><br><span class="line"><span class="keyword">import</span> &#123;</span><br><span class="line">    syncDep</span><br><span class="line">&#125; <span class="keyword">from</span> <span class="string">'./sync-dep'</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">asyncAdd</span>(<span class="params">x, y</span>) </span>&#123;</span><br><span class="line">    <span class="comment">// 调用同步依赖</span></span><br><span class="line">    syncDep();</span><br><span class="line">    <span class="comment">// 复杂的逻辑，代码体积较大，通过异步import引入</span></span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">import</span>(<span class="string">'./async-dep'</span>).then((&#123;</span><br><span class="line">        asyncDep</span><br><span class="line">    &#125;) =&gt; &#123;</span><br><span class="line">        asyncDep();</span><br><span class="line">        <span class="keyword">return</span> x + y;</span><br><span class="line">    &#125;)</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> &#123;</span><br><span class="line">    asyncAdd</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用你的组件库的应用，会用类似如下的代码来使用：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> &#123;</span><br><span class="line">    asyncAdd</span><br><span class="line">&#125; <span class="keyword">from</span> <span class="string">'async-dep-module-demo'</span></span><br><span class="line"></span><br><span class="line">asyncAdd(<span class="number">2</span>, <span class="number">3</span>).then(<span class="function"><span class="params">res</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">"invoke asyncAdd() "</span>, res)</span><br><span class="line"></span><br><span class="line">&#125;)</span><br></pre></td></tr></table></figure>
+<p>现在使用你的组件库的应用，对你的组件库的要求是，如果应用还没有调用aysncAdd方法，则不要加载那部分代码量大的复杂逻辑（ <code>async-dep</code> ）。</p>
+<h1 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h1><h2 id="使用webpack打包你的组件库？"><a href="#使用webpack打包你的组件库？" class="headerlink" title="使用webpack打包你的组件库？"></a>使用webpack打包你的组件库？</h2><p>说起前端的打包工具（bundler），大家最熟悉的可能就是 <code>webpack</code> 。那么webpack能达到我们的期望吗？</p>
+<p>webpack支持打包js库，输出的模块规范有好几种，可以参考这里：<br><a href="https://webpack.js.org/configuration/output/#outputlibrarytarget" target="_blank" rel="noopener">https://webpack.js.org/configuration/output/#outputlibrarytarget</a></p>
+<p>常用的可能有 <code>umd</code> ， <code>amd</code> ， <code>commonjs</code> 等。</p>
+<p>假设我们采用umd格式输出，对应的webpack配置文件大概长这个样子：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// webpack.config.js</span></span><br><span class="line"><span class="keyword">const</span> path = <span class="built_in">require</span>(<span class="string">'path'</span>);</span><br><span class="line"></span><br><span class="line"><span class="built_in">module</span>.exports = &#123;</span><br><span class="line">    entry: <span class="string">'./src/index.js'</span>,</span><br><span class="line">    output: &#123;</span><br><span class="line">        filename: <span class="string">'demo.umd.js'</span>,</span><br><span class="line">        path: path.resolve(__dirname, <span class="string">'dist'</span>),</span><br><span class="line">        library: <span class="string">"moduleDemo"</span>,</span><br><span class="line">        <span class="comment">// 指定输出的模块规范</span></span><br><span class="line">        libraryTarget: <span class="string">"umd"</span></span><br><span class="line">    &#125;,</span><br><span class="line">    <span class="comment">// for better code inspection, we use "development" mode here.</span></span><br><span class="line">    mode: <span class="string">"development"</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>用以上配置文件执行编译后，查看一下编译输出的文件，对于我们所关心的异步import的语法，webpack是编译成如下的代码：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">jsonpScriptSrc</span>(<span class="params">chunkId</span>) </span>&#123;</span><br><span class="line">	<span class="keyword">return</span> __webpack_require__.p + <span class="string">""</span> + chunkId + <span class="string">".demo.umd.js"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个方法在哪里用呢？可以找到，是在下面这个方法<code>__webpack_require__</code>使用：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// The require function</span></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">__webpack_require__</span>(<span class="params">moduleId</span>) </span>&#123;</span><br><span class="line">    <span class="comment">// Check if module is in cache</span></span><br><span class="line">    <span class="keyword">if</span> (installedModules[moduleId]) &#123;</span><br><span class="line">        <span class="keyword">return</span> installedModules[moduleId].exports;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// Create a new module (and put it into the cache)</span></span><br><span class="line">    <span class="keyword">var</span> <span class="built_in">module</span> = installedModules[moduleId] = &#123;</span><br><span class="line">        i: moduleId,</span><br><span class="line">        l: <span class="literal">false</span>,</span><br><span class="line">        exports: &#123;&#125;</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="comment">// Execute the module function</span></span><br><span class="line">    modules[moduleId].call(<span class="built_in">module</span>.exports, <span class="built_in">module</span>, <span class="built_in">module</span>.exports, __webpack_require__)</span><br><span class="line">    <span class="comment">// Flag the module as loaded</span></span><br><span class="line">    <span class="built_in">module</span>.l = <span class="literal">true</span>;</span><br><span class="line">    <span class="comment">// Return the exports of the module</span></span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">module</span>.exports;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// This file contains only the entry chunk.</span></span><br><span class="line"><span class="comment">// The chunk loading function for additional chunks</span></span><br><span class="line">__webpack_require__.e = <span class="function"><span class="keyword">function</span> <span class="title">requireEnsure</span>(<span class="params">chunkId</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> promises = [];</span><br><span class="line">        <span class="comment">// JSONP chunk loading for javascript</span></span><br><span class="line">        <span class="keyword">var</span> installedChunkData = installedChunks[chunkId];</span><br><span class="line">        <span class="keyword">if</span> (installedChunkData !== <span class="number">0</span>) &#123; <span class="comment">// 0 means "already installed".</span></span><br><span class="line">            <span class="comment">// a Promise means "currently loading".</span></span><br><span class="line">            <span class="keyword">if</span> (installedChunkData) &#123;</span><br><span class="line">                promises.push(installedChunkData[<span class="number">2</span>]);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// setup Promise in chunk cache</span></span><br><span class="line">                <span class="keyword">var</span> promise = <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function"><span class="keyword">function</span>(<span class="params">resolve, reject</span>) </span>&#123;</span><br><span class="line">                    installedChunkData = installedChunks[chunkId] = [resolve, reject];</span><br><span class="line">                &#125;);</span><br><span class="line">                promises.push(installedChunkData[<span class="number">2</span>] = promise);</span><br><span class="line">                <span class="comment">// start chunk loading</span></span><br><span class="line">                <span class="keyword">var</span> script = <span class="built_in">document</span>.createElement(<span class="string">'script'</span>);</span><br><span class="line">                <span class="keyword">var</span> onScriptComplete;</span><br><span class="line">                script.charset = <span class="string">'utf-8'</span>;</span><br><span class="line">                script.timeout = <span class="number">120</span>;</span><br><span class="line">                <span class="keyword">if</span> (__webpack_require__.nc) &#123;</span><br><span class="line">                    script.setAttribute(<span class="string">"nonce"</span>, __webpack_require__.nc);</span><br><span class="line">                &#125;</span><br><span class="line">                script.src = jsonpScriptSrc(chunkId);</span><br><span class="line">                <span class="comment">// create error before stack unwound to get useful stacktrace later</span></span><br><span class="line">                <span class="keyword">var</span> error = <span class="keyword">new</span> <span class="built_in">Error</span>();</span><br><span class="line">                onScriptComplete = <span class="function"><span class="keyword">function</span>(<span class="params">event</span>) </span>&#123;</span><br><span class="line">                    <span class="comment">// avoid mem leaks in IE.</span></span><br><span class="line">                    script.onerror = script.onload = <span class="literal">null</span>;</span><br><span class="line">                    clearTimeout(timeout);</span><br><span class="line">                    <span class="keyword">var</span> chunk = installedChunks[chunkId];</span><br><span class="line">                    <span class="keyword">if</span> (chunk !== <span class="number">0</span>) &#123;</span><br><span class="line">                        <span class="keyword">if</span> (chunk) &#123;</span><br><span class="line">                            <span class="keyword">var</span> errorType = event &amp;&amp; (event.type === <span class="string">'load'</span> ? <span class="string">'missing'</span> : e</span><br><span class="line">                                <span class="keyword">var</span> realSrc = event &amp;&amp; event.target &amp;&amp; event.target.src; error.message = <span class="string">'Loading chunk '</span> + chunkId + <span class="string">' failed.\n('</span> + er error.name = <span class="string">'ChunkLoadError'</span>; error.type = errorType; error.request = realSrc; chunk[<span class="number">1</span>](error);</span><br><span class="line">                            &#125;</span><br><span class="line">                            installedChunks[chunkId] = <span class="literal">undefined</span>;</span><br><span class="line">                        &#125;</span><br><span class="line">                    &#125;;</span><br><span class="line">                    <span class="keyword">var</span> timeout = setTimeout(<span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">                        onScriptComplete(&#123;</span><br><span class="line">                            type: <span class="string">'timeout'</span>,</span><br><span class="line">                            target: script</span><br><span class="line">                        &#125;);</span><br><span class="line">                    &#125;, <span class="number">120000</span>);</span><br><span class="line">                    script.onerror = script.onload = onScriptComplete;</span><br><span class="line">                    <span class="built_in">document</span>.head.appendChild(script);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> <span class="built_in">Promise</span>.all(promises);</span><br><span class="line">        &#125;;</span><br></pre></td></tr></table></figure>
+<p>可以看到，webpack编译出来的代码，对于异步import的模块，是编译为动态创建script标签，加载对应分割出来的文件。</p>
+<p>如果我们的组件输出的是这种代码，当应用引入我们的依赖时，会出现什么情况？</p>
+<img src="/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/error-loading-chunk.png" title="error-loading-chunk">
+<p>可以看到加载分割文件失败了，原因是：</p>
+<ul>
+<li>所希望加载的分割文件，在宿主应用中并没有</li>
+</ul>
+<p>要解决这个问题，可以通过在宿主应用中，使用类似<code>copy-webpack-plugin</code>这种插件，将node_modules下的依赖文件拷贝到运行目录中解决。但是这样的方案并不优雅：使用个第三方依赖，还要在编译构建的脚本中增加配置，也太麻烦啰。</p>
+<h2 id="rollup"><a href="#rollup" class="headerlink" title="rollup"></a>rollup</h2><p>rollup 和 webpack的最大不同之处在于，rollup支持打包为es module（esm）格式的js。</p>
+<p>下面我们来试试使用rollup来打包我们的js库。</p>
+<p>rollup配置文件大概长这个样子：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//rollup.config.js</span></span><br><span class="line"><span class="built_in">module</span>.exports = &#123;</span><br><span class="line">    input: <span class="string">'src/index.js'</span>,</span><br><span class="line">    output: &#123;</span><br><span class="line">        <span class="comment">// 设置输出格式为esm</span></span><br><span class="line">        format: <span class="string">'esm'</span>,</span><br><span class="line">        dir: <span class="string">"dist-esm"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>看看rollup打包后的文件长什么样子：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">syncDep</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="built_in">console</span>.log(<span class="string">"[sync-dep] do some job."</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// sync import</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">asyncAdd</span>(<span class="params">x, y</span>) </span>&#123;</span><br><span class="line">    syncDep();</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">import</span>(<span class="string">'./async-dep-c29b934b.js'</span>).then(<span class="function">(<span class="params">&#123; asyncDep &#125;</span>) =&gt;</span> &#123;</span><br><span class="line">        asyncDep();</span><br><span class="line">        <span class="keyword">return</span> x + y;</span><br><span class="line">    &#125;)</span><br><span class="line">    </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">export</span> &#123; asyncAdd &#125;;</span><br></pre></td></tr></table></figure>
+<p>啥？初步一看，和我们写的源码没什么区别呀？</p>
+<p>这就对了。</p>
+<p>因为我们编写源码的时候，用的就是es module的语法（import, export）。</p>
+<p>编译目标是es module，那当然就变化不大啰。</p>
+<p>细看一下，其实还是有变化的，异步import的文件名变成了编译后的文件名，带上了hash值。</p>
+<h3 id="改变组件的入口"><a href="#改变组件的入口" class="headerlink" title="改变组件的入口"></a>改变组件的入口</h3><p>使用rollup编译完，在 <code>package.json</code> 中设置main指向rollup打包出来的 <code>es module</code> 格式的文件。</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"main"</span>: <span class="string">"dist-esm/index.js"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>或者，除了指定main外，也可以指定module字段，也有同样的效果。</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">    <span class="attr">"module"</span>: <span class="string">"dist-esm/index.js"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="运行效果"><a href="#运行效果" class="headerlink" title="运行效果"></a>运行效果</h3><img src="/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/loading-chunk.png" title="loading-chunk">
+<p>这次没有报错了，从网络请求中，也可以看到有一个正常的分割文件的请求，经过查看，这个分割文件正是我们的js库中希望分割的那部分代码。</p>
+<p>使用<a href="https://github.com/webpack-contrib/webpack-bundle-analyzer" target="_blank" rel="noopener">webpack bundle analyzer</a>分析一下宿主应用的模块组成：</p>
+<img src="/hopedrones-tech/2020/01/24/bundling-javascript-npm-modules/bundle.png" title="bundle">
+<p>可以看到最右边的 <code>0.app.js</code>正是我们希望分割的<code>async-dep</code>模块啰。大功告成。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>若希望你开发的js模块，包含按需异步加载的代码，使得宿主应用使用时，能够按需加载，请注意如下几点：</p>
+<ul>
+<li>js库的源码中使用动态import语法（dynamic import）加载需要按需加载的代码</li>
+</ul>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span>(<span class="string">'./xxx.js'</span>).then()</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>不能使用webpack打包js库</p>
+<p>  因为webpack不支持输出es module标准的js</p>
+</li>
+<li><p>使用rollup打包为esm标准的模块</p>
+</li>
+<li><p>设置正确的模块入口</p>
+<p>  package.json 设置入口为es module 标准的js。可以通过指定main或者module字段都可以</p>
+</li>
+</ul>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/hopedrones-tech/2019/03/02/vue-object-property-reactiviy/" rel="next" title="vue中对象作为属性的响应式行为">
+                <i class="fa fa-chevron-left"></i> vue中对象作为属性的响应式行为
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image"
+                src="http://7xn9mp.com1.z0.glb.clouddn.com/avatar-sotl.jpg"
+                alt="Revlekt" />
+            
+              <p class="site-author-name" itemprop="name">Revlekt</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/hopedrones-tech/archives/">
+                
+                    <span class="site-state-item-count">5</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  <a href="/hopedrones-tech/tags/index.html">
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">14</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#场景和期望"><span class="nav-number">2.</span> <span class="nav-text">场景和期望</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实现"><span class="nav-number">3.</span> <span class="nav-text">实现</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#使用webpack打包你的组件库？"><span class="nav-number">3.1.</span> <span class="nav-text">使用webpack打包你的组件库？</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rollup"><span class="nav-number">3.2.</span> <span class="nav-text">rollup</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#改变组件的入口"><span class="nav-number">3.2.1.</span> <span class="nav-text">改变组件的入口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#运行效果"><span class="nav-number">3.2.2.</span> <span class="nav-text">运行效果</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate"> 
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Revlekt</span>
+
+  
+
+  
+</div>
+
+
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/theme-next/hexo-theme-next">NexT.Muse</a> v6.1.0</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/hopedrones-tech/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/hopedrones-tech/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/hopedrones-tech/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/hopedrones-tech/js/src/utils.js?v=6.1.0"></script>
+
+  <script type="text/javascript" src="/hopedrones-tech/js/src/motion.js?v=6.1.0"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/hopedrones-tech/js/src/scrollspy.js?v=6.1.0"></script>
+<script type="text/javascript" src="/hopedrones-tech/js/src/post-details.js?v=6.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/hopedrones-tech/js/src/bootstrap.js?v=6.1.0"></script>
+
+
+
+  
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
